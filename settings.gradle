@@ -1,2 +1,3 @@
+include ':acollector'
 include ':sample'
 rootProject.name = "aCollector"
