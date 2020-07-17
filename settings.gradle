@@ -1,3 +1,4 @@
+include ':firebase-analytics'
 include ':acollector'
 include ':sample'
 rootProject.name = "aCollector"
