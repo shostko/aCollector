@@ -14,6 +14,7 @@
             <option value="$PROJECT_DIR$/firebase-analytics" />
             <option value="$PROJECT_DIR$/firebase-crashlytics" />
             <option value="$PROJECT_DIR$/sample" />
+            <option value="$PROJECT_DIR$/timber" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
