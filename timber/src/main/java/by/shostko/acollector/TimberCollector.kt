@@ -4,7 +4,7 @@ import android.app.Activity
 import android.os.Bundle
 import timber.log.Timber
 
-class TimberAnalyticsCollector(
+class TimberCollector(
     private val tag: String = TAG,
     private val dataMapper: ((Bundle) -> CharSequence)? = null
 ) : Collector {
