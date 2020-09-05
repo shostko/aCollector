@@ -13,5 +13,6 @@ android {
 }
 
 dependencies {
+    compileOnly project(':acollector')
     compileOnly 'com.jakewharton.timber:timber:4.7.1'
 }

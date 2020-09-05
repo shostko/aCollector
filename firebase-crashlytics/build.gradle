@@ -13,5 +13,6 @@ android {
 }
 
 dependencies {
+    compileOnly project(':acollector')
     compileOnly 'com.google.firebase:firebase-crashlytics:17.2.1'
 }
