@@ -13,5 +13,5 @@ android {
 }
 
 dependencies {
-    compileOnly 'com.google.firebase:firebase-crashlytics:17.1.1'
+    compileOnly 'com.google.firebase:firebase-crashlytics:17.2.1'
 }
