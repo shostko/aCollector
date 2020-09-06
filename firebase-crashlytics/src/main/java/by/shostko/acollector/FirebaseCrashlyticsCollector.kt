@@ -4,7 +4,7 @@ import android.app.Activity
 import android.os.Bundle
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 
-class FirebaseCrashlyticsCollector(
+open class FirebaseCrashlyticsCollector(
     private val dataMapper: ((Bundle) -> CharSequence)? = null
 ) : Collector {
 

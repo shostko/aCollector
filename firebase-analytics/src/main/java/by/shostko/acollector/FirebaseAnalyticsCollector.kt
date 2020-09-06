@@ -5,7 +5,7 @@ import android.content.Context
 import android.os.Bundle
 import com.google.firebase.analytics.FirebaseAnalytics
 
-class FirebaseAnalyticsCollector(context: Context) : Collector {
+open class FirebaseAnalyticsCollector(context: Context) : Collector {
 
     private val firebase: FirebaseAnalytics = FirebaseAnalytics.getInstance(context)
 
