@@ -1,3 +1,4 @@
+include ':mixpanel'
 include ':timber'
 include ':firebase-crashlytics'
 include ':firebase-analytics'

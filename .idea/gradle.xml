@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/acollector" />
             <option value="$PROJECT_DIR$/firebase-analytics" />
             <option value="$PROJECT_DIR$/firebase-crashlytics" />
+            <option value="$PROJECT_DIR$/mixpanel" />
             <option value="$PROJECT_DIR$/sample" />
             <option value="$PROJECT_DIR$/timber" />
           </set>
