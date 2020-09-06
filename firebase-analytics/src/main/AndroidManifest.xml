@@ -1,1 +1,7 @@
-<manifest package="by.shostko.acollector.firebase.analytics"></manifest>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="by.shostko.acollector.firebase.analytics">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>
