@@ -10,6 +10,11 @@ buildscript {
     }
 }
 
+plugins {
+    id 'maven-publish'
+    id "com.jfrog.bintray" version "1.8.4"
+}
+
 allprojects {
     repositories {
         google()
@@ -19,4 +24,24 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+project.ext {
+
+    File localProps = file("local.properties");
+    if (localProps.exists()) {
+        Properties props = new Properties()
+        props.load(new FileInputStream(localProps))
+        bintrayUser = props.getProperty("bintrayUser", System.getenv("bintrayUser"))
+        bintrayApiKey = props.getProperty("bintrayApiKey", System.getenv("bintrayApiKey"))
+    } else {
+        bintrayUser = System.getenv("bintrayUser")
+        bintrayKey = System.getenv("bintrayApiKey")
+    }
+
+    compileSdkVersion = 30
+    minSdkVersion = 14
+    targetSdkVersion = 30
+    versionCode = 1
+    versionName = "0.1"
 }

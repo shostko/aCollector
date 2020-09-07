@@ -2,17 +2,29 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
+apply from: 'publishing.gradle'
+
 android {
-    compileSdkVersion 30
+    compileSdkVersion rootProject.ext.compileSdkVersion
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 30
-        versionCode 1
-        versionName "0.1"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionName
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
     }
 }
 
 dependencies {
     compileOnly project(':acollector')
     compileOnly 'com.jakewharton.timber:timber:4.7.1'
+}
+
+afterEvaluate {
+    generateReleaseBuildConfig.enabled = false
 }

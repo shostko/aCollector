@@ -1,0 +1,69 @@
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+tasks.register("sourceJar", Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier.set('sources')
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            releaseAar(MavenPublication) {
+                from components.release
+                artifact sourceJar
+
+                groupId = 'by.shostko'
+                artifactId = 'acollector-firebase-analytics'
+                version = rootProject.ext.versionName
+
+                pom {
+                    name = 'acollector-firebase-analytics'
+                    description = 'Firebase Analytics Collector for aCollector library'
+                    url = 'https://github.com/shostko/aCollector'
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'shostko'
+                            name = 'Sergey Shostko'
+                            email = 's.shostko@gmail.com'
+                        }
+                    }
+                    scm {
+                        url = 'https://github.com/shostko/aCollector'
+                    }
+                }
+            }
+        }
+    }
+
+    bintray {
+        user = rootProject.ext.bintrayUser
+        key = rootProject.ext.bintrayApiKey
+
+        publications = ["releaseAar"]
+
+        pkg {
+            repo = 'android'
+            name = 'acollector-firebase-analytics'
+            desc = "Firebase Analytics Collector for aCollector library"
+            licenses = ['Apache-2.0']
+            vcsUrl = 'https://github.com/shostko/aCollector.git'
+            websiteUrl = 'https://github.com/shostko/aCollector'
+            issueTrackerUrl = 'https://github.com/shostko/aCollector/issues'
+            labels = ['android', 'analytics', 'firebase']
+
+            githubRepo = 'shostko/aCollector'
+
+            version {
+                name = rootProject.ext.versionName
+                vcsTag = "v.${rootProject.ext.versionName}"
+            }
+        }
+    }
+}
