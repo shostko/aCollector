@@ -22,7 +22,7 @@ android {
 
 dependencies {
     compileOnly project(':acollector')
-    compileOnly 'com.mixpanel.android:mixpanel-android:5.8.4'
+    compileOnly 'com.mixpanel.android:mixpanel-android:5.8.5'
 }
 
 afterEvaluate {

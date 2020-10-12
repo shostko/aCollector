@@ -22,7 +22,7 @@ android {
 
 dependencies {
     compileOnly project(':acollector')
-    compileOnly 'com.google.firebase:firebase-crashlytics:17.2.1'
+    compileOnly 'com.google.firebase:firebase-crashlytics:17.2.2'
 }
 
 afterEvaluate {
