@@ -1,14 +1,19 @@
+@file:Suppress("unused")
+
 package by.shostko.acollector
 
 import android.app.Activity
 import android.os.Bundle
-import java.util.*
-import kotlin.collections.HashMap
 
 object ACollector : Collector {
 
+    private const val VALUE = "value"
+    private const val NULL = "null"
+    private const val CLASS = "class"
+    private const val THROWABLE = "throwable"
+
     private val instance: CompositeCollector = CompositeCollector()
-    internal val bundlers: MutableMap<Class<*>, Bundle.(Any) -> Unit> = HashMap()
+    private val bundlers: MutableMap<Class<*>, Bundle.(Any) -> Unit> = HashMap()
 
     fun init(initializer: ACollector.() -> Unit) = this.initializer()
 
@@ -30,55 +35,63 @@ object ACollector : Collector {
     override fun setProperty(key: String, value: Float?) = instance.setProperty(key, value)
     override fun setProperty(key: String, value: Int?) = instance.setProperty(key, value)
     override fun setProperty(key: String, value: Long?) = instance.setProperty(key, value)
-}
 
-internal class CompositeCollector : Collector {
+    fun enable() = instance.setEnabled(true)
+    fun disable() = instance.setEnabled(false)
+    fun track(event: String) = instance.track(event, null)
+    fun track(event: Collector.Event, data: Bundle? = null) = instance.track(event.name, data)
+    fun track(event: String, vararg objs: Any?) = instance.track(event, objs.bundled())
+    fun track(event: Collector.Event, vararg objs: Any?) = instance.track(event.name, objs.bundled())
+    fun setProperty(property: Collector.Property, value: String?) = instance.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Boolean?) = instance.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Double?) = instance.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Float?) = instance.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Int?) = instance.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Long?) = instance.setProperty(property.name, value)
 
-    private val collectors: MutableList<Collector> = LinkedList()
-
-    fun register(collector: Collector) = collectors.add(collector)
-
-    override fun reset() {
-        collectors.forEach { it.reset() }
+    private fun Array<out Any?>.bundled(): Bundle = Bundle().also {
+        forEach { obj -> it.bundle(obj) }
     }
 
-    override fun setEnabled(enabled: Boolean) {
-        collectors.forEach { it.setEnabled(enabled) }
+    private fun Bundle.bundle(obj: Any?) {
+        if (obj == null) {
+            putString(VALUE, NULL)
+        } else {
+            val clazz = obj.javaClass
+            if (bundlers.containsKey(clazz)) {
+                bundlers[clazz]?.invoke(this, obj)
+            } else {
+                when (obj) {
+                    is String -> putString(VALUE, obj)
+                    is Boolean -> putBoolean(VALUE, obj)
+                    is Int -> putInt(VALUE, obj)
+                    is Long -> putLong(VALUE, obj)
+                    is Float -> putFloat(VALUE, obj)
+                    is Double -> putDouble(VALUE, obj)
+                    is Class<*> -> putString(CLASS, obj.simpleName)
+                    is Pair<*, *> -> putString(obj.first?.toString() ?: NULL, obj.second?.toString() ?: NULL)
+                    is Throwable -> putString(THROWABLE, obj.message)
+                    is Map<*, *> -> putMap(obj)
+                    is Bundle -> putAll(obj)
+                    else -> putString(clazz.simpleName, obj.toString())
+                }
+            }
+        }
     }
 
-    override fun track(event: String, data: Bundle?) {
-        collectors.forEach { it.track(event, data) }
-    }
-
-    override fun setScreen(activity: Activity, name: String?, clazz: Class<*>?) {
-        collectors.forEach { it.setScreen(activity, name, clazz) }
-    }
-
-    override fun setUser(identifier: String?) {
-        collectors.forEach { it.setUser(identifier) }
-    }
-
-    override fun setProperty(key: String, value: String?) {
-        collectors.forEach { it.setProperty(key, value) }
-    }
-
-    override fun setProperty(key: String, value: Boolean?) {
-        collectors.forEach { it.setProperty(key, value) }
-    }
-
-    override fun setProperty(key: String, value: Double?) {
-        collectors.forEach { it.setProperty(key, value) }
-    }
-
-    override fun setProperty(key: String, value: Float?) {
-        collectors.forEach { it.setProperty(key, value) }
-    }
-
-    override fun setProperty(key: String, value: Int?) {
-        collectors.forEach { it.setProperty(key, value) }
-    }
-
-    override fun setProperty(key: String, value: Long?) {
-        collectors.forEach { it.setProperty(key, value) }
+    private fun Bundle.putMap(map: Map<*, *>) {
+        for ((key, value) in map.entries) {
+            val keyStr = key?.toString() ?: NULL
+            when (value) {
+                null -> putString(keyStr, NULL)
+                is String -> putString(keyStr, value)
+                is Boolean -> putBoolean(keyStr, value)
+                is Int -> putInt(keyStr, value)
+                is Long -> putLong(keyStr, value)
+                is Float -> putFloat(keyStr, value)
+                is Double -> putDouble(keyStr, value)
+                else -> putString(keyStr, value.toString())
+            }
+        }
     }
 }
