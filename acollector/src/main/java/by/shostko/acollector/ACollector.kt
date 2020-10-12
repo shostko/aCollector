@@ -4,6 +4,7 @@ package by.shostko.acollector
 
 import android.app.Activity
 import android.os.Bundle
+import java.util.*
 
 object ACollector : Collector {
 
@@ -13,15 +14,14 @@ object ACollector : Collector {
     private const val THROWABLE = "throwable"
 
     private val instance: CompositeCollector = CompositeCollector()
-    private val bundlers: MutableMap<Class<*>, Bundle.(Any) -> Unit> = HashMap()
+    private val bundlers: LinkedList<Bundler<*>> = LinkedList()
 
     fun init(initializer: ACollector.() -> Unit) = this.initializer()
 
     fun register(collector: Collector) = instance.register(collector)
 
-    @Suppress("UNCHECKED_CAST")
     fun <T : Any> bundle(clazz: Class<T>, bundler: Bundle.(T) -> Unit) {
-        bundlers[clazz] = bundler as Bundle.(Any) -> Unit
+        bundlers.addLast(Bundler(clazz, bundler))
     }
 
     override fun reset() = instance.reset()
@@ -57,9 +57,9 @@ object ACollector : Collector {
         if (obj == null) {
             putString(VALUE, NULL)
         } else {
-            val clazz = obj.javaClass
-            if (bundlers.containsKey(clazz)) {
-                bundlers[clazz]?.invoke(this, obj)
+            val bundler = bundlers.firstOrNull { it.canBundle(obj) }
+            if (bundler != null) {
+                bundler.invoke(this, obj)
             } else {
                 when (obj) {
                     is String -> putString(VALUE, obj)
@@ -73,7 +73,7 @@ object ACollector : Collector {
                     is Throwable -> putString(THROWABLE, obj.message)
                     is Map<*, *> -> putMap(obj)
                     is Bundle -> putAll(obj)
-                    else -> putString(clazz.simpleName, obj.toString())
+                    else -> putString(obj.javaClass.simpleName, obj.toString())
                 }
             }
         }
@@ -92,6 +92,19 @@ object ACollector : Collector {
                 is Double -> putDouble(keyStr, value)
                 else -> putString(keyStr, value.toString())
             }
+        }
+    }
+
+    private class Bundler<T>(
+        private val clazz: Class<T>,
+        private val function: Bundle.(T) -> Unit
+    ) : (Bundle, Any) -> Unit {
+
+        fun canBundle(obj: Any): Boolean = clazz.isInstance(obj)
+
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(bundle: Bundle, obj: Any) {
+            bundle.function(obj as T)
         }
     }
 }
