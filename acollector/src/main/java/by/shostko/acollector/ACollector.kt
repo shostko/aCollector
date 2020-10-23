@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
 package by.shostko.acollector
 
@@ -17,6 +17,11 @@ object ACollector : Collector {
     private val bundlers: LinkedList<Bundler<*>> = LinkedList()
 
     fun init(initializer: ACollector.() -> Unit) = this.initializer()
+
+    fun enable(initializer: ACollector.() -> Unit) {
+        init(initializer)
+        enable()
+    }
 
     fun register(collector: Collector) = instance.register(collector)
 
