@@ -15,6 +15,7 @@ object ACollector : Collector {
 
     private val instance: CompositeCollector = CompositeCollector()
     private val bundlers: LinkedList<Bundler<*>> = LinkedList()
+    private val interceptors: LinkedList<Interceptor> = LinkedList()
 
     fun init(initializer: ACollector.() -> Unit) = this.initializer()
 
@@ -25,13 +26,17 @@ object ACollector : Collector {
 
     fun register(collector: Collector) = instance.register(collector)
 
+    fun intercept(interceptor: Interceptor) {
+        interceptors.addLast(interceptor)
+    }
+
     fun <T : Any> bundle(clazz: Class<T>, bundler: Bundle.(T) -> Unit) {
         bundlers.addLast(Bundler(clazz, bundler))
     }
 
     override fun reset() = instance.reset()
     override fun setEnabled(enabled: Boolean) = instance.setEnabled(enabled)
-    override fun track(event: String, data: Bundle?) = instance.track(event, data)
+    override fun track(event: String, data: Bundle?) = track(EventHolder.create(event, data))
     override fun setScreen(activity: Activity, name: String?, clazz: Class<*>?) = instance.setScreen(activity, name, clazz)
     override fun setUser(identifier: String?) = instance.setUser(identifier)
     override fun setProperty(key: String, value: String?) = instance.setProperty(key, value)
@@ -43,16 +48,33 @@ object ACollector : Collector {
 
     fun enable() = instance.setEnabled(true)
     fun disable() = instance.setEnabled(false)
-    fun track(event: String) = instance.track(event, null)
-    fun track(event: Collector.Event, data: Bundle? = null) = instance.track(event.name, data)
-    fun track(event: String, vararg objs: Any?) = instance.track(event, objs.bundled())
-    fun track(event: Collector.Event, vararg objs: Any?) = instance.track(event.name, objs.bundled())
+    fun track(event: String) = track(EventHolder.create(event))
+    fun track(event: Collector.Event, data: Bundle? = null) = track(EventHolder.create(event, data))
+    fun track(event: String, vararg objs: Any?) = track(EventHolder.create(event, objs))
+    fun track(event: Collector.Event, vararg objs: Any?) = track(EventHolder.create(event, objs))
     fun setProperty(property: Collector.Property, value: String?) = instance.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Boolean?) = instance.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Double?) = instance.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Float?) = instance.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Int?) = instance.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Long?) = instance.setProperty(property.name, value)
+
+    private fun track(holder: EventHolder) {
+        if (interceptors.isEmpty()) {
+            instance.track(holder.event.name, holder.data?.bundled())
+        } else {
+            var temp: EventHolder? = holder
+            for (interceptor in interceptors) {
+                temp = temp?.let { interceptor.intercept(it) }
+                if (temp == null) {
+                    break
+                }
+            }
+            if (temp != null) {
+                instance.track(temp.event.name, temp.data?.bundled())
+            }
+        }
+    }
 
     private fun Array<out Any?>.bundled(): Bundle = Bundle().also {
         forEach { obj -> it.bundle(obj) }
