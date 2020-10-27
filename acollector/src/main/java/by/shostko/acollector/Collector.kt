@@ -31,6 +31,7 @@ interface Collector {
     interface Event {
         val name: String
 
+        fun track() = ACollector.track(this)
         fun track(vararg data: Any?) = ACollector.track(this, *data)
         fun track(data: Map<String, Any?>?) = ACollector.track(this, data)
 
