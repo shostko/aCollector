@@ -5,6 +5,7 @@ package by.shostko.acollector
 import android.app.Activity
 import android.os.Bundle
 import java.util.*
+import kotlin.collections.HashMap
 
 object ACollector : Collector {
 
@@ -14,7 +15,7 @@ object ACollector : Collector {
     private const val THROWABLE = "throwable"
 
     private val instance: CompositeCollector = CompositeCollector()
-    private val bundlers: LinkedList<Bundler<*>> = LinkedList()
+    private val mappers: LinkedList<Mapper<*>> = LinkedList()
     private val interceptors: LinkedList<Interceptor> = LinkedList()
 
     fun init(initializer: ACollector.() -> Unit) = this.initializer()
@@ -30,13 +31,13 @@ object ACollector : Collector {
         interceptors.addLast(interceptor)
     }
 
-    fun <T : Any> bundle(clazz: Class<T>, bundler: Bundle.(T) -> Unit) {
-        bundlers.addLast(Bundler(clazz, bundler))
+    fun <T : Any> map(clazz: Class<T>, mapper: MutableMap<String, Any?>.(T) -> Unit) {
+        mappers.addLast(Mapper(clazz, mapper))
     }
 
     override fun reset() = instance.reset()
     override fun setEnabled(enabled: Boolean) = instance.setEnabled(enabled)
-    override fun track(event: String, data: Bundle?) = track(EventHolder.create(event, data))
+    override fun track(event: String, data: Map<String, Any?>?) = track(EventHolder.create(event, data))
     override fun setScreen(activity: Activity, name: String?, clazz: Class<*>?) = instance.setScreen(activity, name, clazz)
     override fun setUser(identifier: String?) = instance.setUser(identifier)
     override fun setProperty(key: String, value: String?) = instance.setProperty(key, value)
@@ -49,9 +50,10 @@ object ACollector : Collector {
     fun enable() = instance.setEnabled(true)
     fun disable() = instance.setEnabled(false)
     fun track(event: String) = track(EventHolder.create(event))
-    fun track(event: Collector.Event, data: Bundle? = null) = track(EventHolder.create(event, data))
-    fun track(event: String, vararg objs: Any?) = track(EventHolder.create(event, objs))
-    fun track(event: Collector.Event, vararg objs: Any?) = track(EventHolder.create(event, objs))
+    fun track(event: String, vararg data: Any?) = track(EventHolder.create(event, data))
+    fun track(event: Collector.Event) = track(EventHolder.create(event))
+    fun track(event: Collector.Event, data: Map<String, Any?>?) = track(EventHolder.create(event, data))
+    fun track(event: Collector.Event, vararg data: Any?) = track(EventHolder.create(event, data))
     fun setProperty(property: Collector.Property, value: String?) = instance.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Boolean?) = instance.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Double?) = instance.setProperty(property.name, value)
@@ -61,7 +63,7 @@ object ACollector : Collector {
 
     private fun track(holder: EventHolder) {
         if (interceptors.isEmpty()) {
-            instance.track(holder.event.name, holder.data?.bundled())
+            instance.track(holder.event.name, holder.data?.asMap())
         } else {
             var temp: EventHolder? = holder
             for (interceptor in interceptors) {
@@ -71,66 +73,82 @@ object ACollector : Collector {
                 }
             }
             if (temp != null) {
-                instance.track(temp.event.name, temp.data?.bundled())
+                instance.track(temp.event.name, temp.data?.asMap())
             }
         }
     }
 
-    private fun Array<out Any?>.bundled(): Bundle = Bundle().also {
+    private fun Array<out Any?>.asMap(): Map<String, Any?> = HashMap<String, Any?>().also {
         forEach { obj -> it.bundle(obj) }
     }
 
-    private fun Bundle.bundle(obj: Any?) {
+    private fun MutableMap<String, Any?>.bundle(obj: Any?) {
         if (obj == null) {
-            putString(VALUE, NULL)
+            put(VALUE, NULL)
         } else {
-            val bundler = bundlers.firstOrNull { it.canBundle(obj) }
-            if (bundler != null) {
-                bundler.invoke(this, obj)
+            val mapper = mappers.firstOrNull { it.canMap(obj) }
+            if (mapper != null) {
+                mapper.invoke(this, obj)
             } else {
                 when (obj) {
-                    is String -> putString(VALUE, obj)
-                    is Boolean -> putBoolean(VALUE, obj)
-                    is Int -> putInt(VALUE, obj)
-                    is Long -> putLong(VALUE, obj)
-                    is Float -> putFloat(VALUE, obj)
-                    is Double -> putDouble(VALUE, obj)
-                    is Class<*> -> putString(CLASS, obj.simpleName)
-                    is Pair<*, *> -> putString(obj.first?.toString() ?: NULL, obj.second?.toString() ?: NULL)
-                    is Throwable -> putString(THROWABLE, obj.message)
+                    is String -> put(VALUE, obj)
+                    is Boolean -> put(VALUE, obj)
+                    is Int -> put(VALUE, obj)
+                    is Long -> put(VALUE, obj)
+                    is Float -> put(VALUE, obj)
+                    is Double -> put(VALUE, obj)
+                    is Class<*> -> put(CLASS, obj.simpleName)
+                    is Pair<*, *> -> put(obj.first?.toString() ?: NULL, obj.second?.toString() ?: NULL)
+                    is Throwable -> put(THROWABLE, obj.message)
                     is Map<*, *> -> putMap(obj)
-                    is Bundle -> putAll(obj)
-                    else -> putString(obj.javaClass.simpleName, obj.toString())
+                    is Bundle -> putBundle(obj)
+                    else -> put(obj.javaClass.simpleName, obj.toString())
                 }
             }
         }
     }
 
-    private fun Bundle.putMap(map: Map<*, *>) {
+    private fun MutableMap<String, Any?>.putMap(map: Map<*, *>) {
         for ((key, value) in map.entries) {
             val keyStr = key?.toString() ?: NULL
             when (value) {
-                null -> putString(keyStr, NULL)
-                is String -> putString(keyStr, value)
-                is Boolean -> putBoolean(keyStr, value)
-                is Int -> putInt(keyStr, value)
-                is Long -> putLong(keyStr, value)
-                is Float -> putFloat(keyStr, value)
-                is Double -> putDouble(keyStr, value)
-                else -> putString(keyStr, value.toString())
+                null -> put(keyStr, NULL)
+                is String -> put(keyStr, value)
+                is Boolean -> put(keyStr, value)
+                is Int -> put(keyStr, value)
+                is Long -> put(keyStr, value)
+                is Float -> put(keyStr, value)
+                is Double -> put(keyStr, value)
+                else -> put(keyStr, value.toString())
             }
         }
     }
 
-    private class Bundler<T>(
-        private val clazz: Class<T>,
-        private val function: Bundle.(T) -> Unit
-    ) : (Bundle, Any) -> Unit {
+    private fun MutableMap<String, Any?>.putBundle(bundle: Bundle) {
+        for (key in bundle.keySet()) {
+            val keyStr = key.toString()
+            when (val value = bundle.get(key)) {
+                null -> put(keyStr, NULL)
+                is String -> put(keyStr, value)
+                is Boolean -> put(keyStr, value)
+                is Int -> put(keyStr, value)
+                is Long -> put(keyStr, value)
+                is Float -> put(keyStr, value)
+                is Double -> put(keyStr, value)
+                else -> put(keyStr, value.toString())
+            }
+        }
+    }
 
-        fun canBundle(obj: Any): Boolean = clazz.isInstance(obj)
+    private class Mapper<T>(
+        private val clazz: Class<T>,
+        private val function: MutableMap<String, Any?>.(T) -> Unit
+    ) : (MutableMap<String, Any?>, Any) -> Unit {
+
+        fun canMap(obj: Any): Boolean = clazz.isInstance(obj)
 
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(bundle: Bundle, obj: Any) {
+        override fun invoke(bundle: MutableMap<String, Any?>, obj: Any) {
             bundle.function(obj as T)
         }
     }

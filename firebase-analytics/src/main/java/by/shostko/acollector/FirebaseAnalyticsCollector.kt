@@ -17,8 +17,8 @@ open class FirebaseAnalyticsCollector(context: Context) : Collector {
         firebase.setAnalyticsCollectionEnabled(enabled)
     }
 
-    override fun track(event: String, data: Bundle?) {
-        firebase.logEvent(event, data)
+    override fun track(event: String, data: Map<String, Any?>?) {
+        firebase.logEvent(event, data?.let { Bundle().apply { putMap(it) } })
     }
 
     override fun setScreen(activity: Activity, name: String?, clazz: Class<*>?) {
@@ -51,5 +51,24 @@ open class FirebaseAnalyticsCollector(context: Context) : Collector {
 
     override fun setProperty(key: String, value: Long?) {
         setProperty(key, value?.toString())
+    }
+
+    private fun Bundle.putMap(map: Map<String, Any?>) {
+        for ((key, value) in map.entries) {
+            when (value) {
+                null -> putString(key, NULL)
+                is String -> putString(key, value)
+                is Boolean -> putBoolean(key, value)
+                is Int -> putInt(key, value)
+                is Long -> putLong(key, value)
+                is Float -> putFloat(key, value)
+                is Double -> putDouble(key, value)
+                else -> putString(key, value.toString())
+            }
+        }
+    }
+
+    companion object {
+        private const val NULL = "null"
     }
 }

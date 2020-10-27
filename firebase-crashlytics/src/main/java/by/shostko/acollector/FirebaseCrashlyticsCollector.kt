@@ -1,11 +1,10 @@
 package by.shostko.acollector
 
 import android.app.Activity
-import android.os.Bundle
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 open class FirebaseCrashlyticsCollector(
-    private val dataMapper: ((Bundle) -> CharSequence)? = null
+    private val dataMapper: ((Map<String, Any?>) -> CharSequence)? = null
 ) : Collector {
 
     companion object {
@@ -27,20 +26,20 @@ open class FirebaseCrashlyticsCollector(
         firebase.setCrashlyticsCollectionEnabled(enabled)
     }
 
-    override fun track(event: String, data: Bundle?) {
-        if (data == null || data.isEmpty) {
-            firebase.log(String.format(FORMAT_SHORT, event))
-        } else if (dataMapper != null) {
-            firebase.log(String.format(FORMAT_DETAILED, event, dataMapper.invoke(data)))
-        } else {
-            val builder = StringBuilder()
-            for (key in data.keySet()) {
-                builder.append(DATA_SEPARATOR)
-                    .append(key)
-                    .append(DATA_MAPPER)
-                    .append(data[key])
+    override fun track(event: String, data: Map<String, Any?>?) {
+        when {
+            data.isNullOrEmpty() -> firebase.log(String.format(FORMAT_SHORT, event))
+            dataMapper != null -> firebase.log(String.format(FORMAT_DETAILED, event, dataMapper.invoke(data)))
+            else -> {
+                val builder = StringBuilder()
+                for ((key, value) in data.entries) {
+                    builder.append(DATA_SEPARATOR)
+                        .append(key)
+                        .append(DATA_MAPPER)
+                        .append(value)
+                }
+                firebase.log(String.format(FORMAT_DETAILED, event, builder))
             }
-            firebase.log(String.format(FORMAT_DETAILED, event, builder))
         }
     }
 

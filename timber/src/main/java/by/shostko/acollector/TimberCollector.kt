@@ -1,12 +1,11 @@
 package by.shostko.acollector
 
 import android.app.Activity
-import android.os.Bundle
 import timber.log.Timber
 
 open class TimberCollector(
     private val tag: String = TAG,
-    private val dataMapper: ((Bundle) -> CharSequence)? = null
+    private val dataMapper: ((Map<String, Any?>) -> CharSequence)? = null
 ) : Collector {
 
     companion object {
@@ -26,21 +25,21 @@ open class TimberCollector(
         Timber.tag(tag).v(if (enabled) "enabled" else "disabled")
     }
 
-    override fun track(event: String, data: Bundle?) {
+    override fun track(event: String, data: Map<String, Any?>?) {
         if (enabled) {
-            if (data == null || data.isEmpty) {
-                Timber.tag(tag).v(event)
-            } else if (dataMapper != null) {
-                Timber.tag(tag).v("%s:%s", event, dataMapper.invoke(data))
-            } else {
-                val builder = StringBuilder()
-                for (key in data.keySet()) {
-                    builder.append(DATA_SEPARATOR)
-                        .append(key)
-                        .append(DATA_MAPPER)
-                        .append(data[key])
+            when {
+                data.isNullOrEmpty() -> Timber.tag(tag).v(event)
+                dataMapper != null -> Timber.tag(tag).v("%s:%s", event, dataMapper.invoke(data))
+                else -> {
+                    val builder = StringBuilder()
+                    for ((key, value) in data.entries) {
+                        builder.append(DATA_SEPARATOR)
+                            .append(key)
+                            .append(DATA_MAPPER)
+                            .append(value)
+                    }
+                    Timber.tag(tag).v("%s:%s", event, builder)
                 }
-                Timber.tag(tag).v("%s:%s", event, builder)
             }
         }
     }

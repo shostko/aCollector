@@ -1,7 +1,6 @@
 package by.shostko.acollector
 
 import android.app.Activity
-import android.os.Bundle
 import java.util.*
 
 internal class CompositeCollector : Collector {
@@ -18,7 +17,7 @@ internal class CompositeCollector : Collector {
         collectors.forEach { it.setEnabled(enabled) }
     }
 
-    override fun track(event: String, data: Bundle?) {
+    override fun track(event: String, data: Map<String, Any?>?) {
         collectors.forEach { it.track(event, data) }
     }
 

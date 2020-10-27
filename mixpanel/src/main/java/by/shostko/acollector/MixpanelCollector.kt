@@ -2,7 +2,6 @@ package by.shostko.acollector
 
 import android.app.Activity
 import android.content.Context
-import android.os.Bundle
 import com.mixpanel.android.mpmetrics.MixpanelAPI
 import org.json.JSONObject
 
@@ -33,13 +32,13 @@ open class MixpanelCollector(
         }
     }
 
-    override fun track(event: String, data: Bundle?) {
-        if (data == null || data.isEmpty) {
+    override fun track(event: String, data: Map<String, Any?>?) {
+        if (data.isNullOrEmpty()) {
             mixpanel.track(event)
         } else {
             val props = JSONObject()
-            for (key in data.keySet()) {
-                props.put(key, data[key])
+            for ((key, value) in data.entries) {
+                props.put(key, value)
             }
             mixpanel.track(event, props)
         }
