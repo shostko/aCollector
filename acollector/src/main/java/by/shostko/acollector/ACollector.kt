@@ -27,6 +27,10 @@ object ACollector : Collector {
 
     fun register(collector: Collector) = composition.register(collector)
 
+    fun intercept(event: Collector.Event, mapper: (EventHolder) -> EventHolder?) {
+        interceptors.addLast(SimpleInterceptor(event, mapper))
+    }
+
     fun intercept(interceptor: Interceptor) {
         interceptors.addLast(interceptor)
     }
