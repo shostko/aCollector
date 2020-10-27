@@ -14,7 +14,7 @@ object ACollector : Collector {
     private const val CLASS = "class"
     private const val THROWABLE = "throwable"
 
-    private val instance: CompositeCollector = CompositeCollector()
+    private val composition: CompositeCollector = CompositeCollector()
     private val mappers: LinkedList<Mapper<*>> = LinkedList()
     private val interceptors: LinkedList<Interceptor> = LinkedList()
 
@@ -25,7 +25,7 @@ object ACollector : Collector {
         enable()
     }
 
-    fun register(collector: Collector) = instance.register(collector)
+    fun register(collector: Collector) = composition.register(collector)
 
     fun intercept(interceptor: Interceptor) {
         interceptors.addLast(interceptor)
@@ -35,35 +35,35 @@ object ACollector : Collector {
         mappers.addLast(Mapper(clazz, mapper))
     }
 
-    override fun reset() = instance.reset()
-    override fun setEnabled(enabled: Boolean) = instance.setEnabled(enabled)
+    override fun reset() = composition.reset()
+    override fun setEnabled(enabled: Boolean) = composition.setEnabled(enabled)
     override fun track(event: String, data: Map<String, Any?>?) = track(EventHolder.create(event, data))
-    override fun setScreen(activity: Activity, name: String?, clazz: Class<*>?) = instance.setScreen(activity, name, clazz)
-    override fun setUser(identifier: String?) = instance.setUser(identifier)
-    override fun setProperty(key: String, value: String?) = instance.setProperty(key, value)
-    override fun setProperty(key: String, value: Boolean?) = instance.setProperty(key, value)
-    override fun setProperty(key: String, value: Double?) = instance.setProperty(key, value)
-    override fun setProperty(key: String, value: Float?) = instance.setProperty(key, value)
-    override fun setProperty(key: String, value: Int?) = instance.setProperty(key, value)
-    override fun setProperty(key: String, value: Long?) = instance.setProperty(key, value)
+    override fun setScreen(activity: Activity, name: String?, clazz: Class<*>?) = composition.setScreen(activity, name, clazz)
+    override fun setUser(identifier: String?) = composition.setUser(identifier)
+    override fun setProperty(key: String, value: String?) = composition.setProperty(key, value)
+    override fun setProperty(key: String, value: Boolean?) = composition.setProperty(key, value)
+    override fun setProperty(key: String, value: Double?) = composition.setProperty(key, value)
+    override fun setProperty(key: String, value: Float?) = composition.setProperty(key, value)
+    override fun setProperty(key: String, value: Int?) = composition.setProperty(key, value)
+    override fun setProperty(key: String, value: Long?) = composition.setProperty(key, value)
 
-    fun enable() = instance.setEnabled(true)
-    fun disable() = instance.setEnabled(false)
+    fun enable() = composition.setEnabled(true)
+    fun disable() = composition.setEnabled(false)
     fun track(event: String) = track(EventHolder.create(event))
     fun track(event: String, vararg data: Any?) = track(EventHolder.create(event, data))
     fun track(event: Collector.Event) = track(EventHolder.create(event))
     fun track(event: Collector.Event, data: Map<String, Any?>?) = track(EventHolder.create(event, data))
     fun track(event: Collector.Event, vararg data: Any?) = track(EventHolder.create(event, data))
-    fun setProperty(property: Collector.Property, value: String?) = instance.setProperty(property.name, value)
-    fun setProperty(property: Collector.Property, value: Boolean?) = instance.setProperty(property.name, value)
-    fun setProperty(property: Collector.Property, value: Double?) = instance.setProperty(property.name, value)
-    fun setProperty(property: Collector.Property, value: Float?) = instance.setProperty(property.name, value)
-    fun setProperty(property: Collector.Property, value: Int?) = instance.setProperty(property.name, value)
-    fun setProperty(property: Collector.Property, value: Long?) = instance.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: String?) = composition.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Boolean?) = composition.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Double?) = composition.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Float?) = composition.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Int?) = composition.setProperty(property.name, value)
+    fun setProperty(property: Collector.Property, value: Long?) = composition.setProperty(property.name, value)
 
     private fun track(holder: EventHolder) {
         if (interceptors.isEmpty()) {
-            instance.track(holder.event.name, holder.data?.asMap())
+            composition.track(holder.event.name, holder.data?.asMap())
         } else {
             var temp: EventHolder? = holder
             for (interceptor in interceptors) {
@@ -73,7 +73,7 @@ object ACollector : Collector {
                 }
             }
             if (temp != null) {
-                instance.track(temp.event.name, temp.data?.asMap())
+                composition.track(temp.event.name, temp.data?.asMap())
             }
         }
     }
