@@ -2,59 +2,52 @@
 
 package by.shostko.acollector
 
+import java.util.*
+
 fun interface Interceptor {
     fun intercept(input: EventHolder): EventHolder?
 }
 
-data class EventHolder(
-    val event: Collector.Event,
-    val data: Array<out Any?>?
-) {
-    companion object {
-        fun create(event: String) = EventHolder(Collector.Event.create(event), null)
-        fun create(event: String, vararg data: Any?) = EventHolder(Collector.Event.create(event), data)
-        fun create(event: Collector.Event) = EventHolder(event, null)
-        fun create(event: Collector.Event, vararg data: Any?) = EventHolder(event, data)
-    }
+class InterceptedCollector(
+    private val original: Collector
+) : Collector by original {
+    private val interceptors: LinkedList<Interceptor> = LinkedList()
+    internal fun addInterceptor(interceptor: Interceptor) = this.interceptors.addLast(interceptor)
+    internal fun addInterceptors(interceptors: List<Interceptor>) = this.interceptors.addAll(interceptors)
+    internal fun track(holder: EventHolder) = interceptors.handle(original, holder)
+}
 
-    fun replaceEvent(event: String) = copy(event = Collector.Event.create(event))
+fun Collector.intercept(interceptor: Interceptor): InterceptedCollector {
+    val result = (this as? InterceptedCollector) ?: InterceptedCollector(this)
+    result.addInterceptor(interceptor)
+    return result
+}
 
-    fun replaceEvent(event: Collector.Event) = copy(event = event)
+fun Collector.intercept(vararg interceptors: Interceptor): InterceptedCollector {
+    val result = (this as? InterceptedCollector) ?: InterceptedCollector(this)
+    result.addInterceptors(interceptors.asList())
+    return result
+}
 
-    fun replaceData(vararg data: Any?) = if (data.isNullOrEmpty()) {
-        copy(data = null)
+internal fun Collector.track(holder: EventHolder) = when (this) {
+    is InterceptedCollector -> track(holder)
+    is CompositeCollector -> track(holder)
+    else -> track(holder.eventName, holder.dataAsMap)
+}
+
+internal fun List<Interceptor>.handle(collector: Collector, holder: EventHolder) {
+    if (isEmpty()) {
+        collector.track(holder)
     } else {
-        copy(data = data)
-    }
-
-    fun appendData(vararg data: Any?) = if (this.data.isNullOrEmpty()) {
-        copy(data = data)
-    } else {
-        copy(data = concatenate(this.data, data))
-    }
-
-    private fun concatenate(a: Array<out Any?>, b: Array<out Any?>) = Array(a.size + b.size) {
-        if (it < a.size) a[it] else b[it - a.size]
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as EventHolder
-
-        if (event != other.event) return false
-        if (data != null) {
-            if (other.data == null) return false
-            if (!data.contentEquals(other.data)) return false
-        } else if (other.data != null) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = event.hashCode()
-        result = 31 * result + (data?.contentHashCode() ?: 0)
-        return result
+        var temp: EventHolder? = holder
+        for (interceptor in this) {
+            temp = temp?.let { interceptor.intercept(it) }
+            if (temp == null) {
+                break
+            }
+        }
+        if (temp != null) {
+            collector.track(temp)
+        }
     }
 }

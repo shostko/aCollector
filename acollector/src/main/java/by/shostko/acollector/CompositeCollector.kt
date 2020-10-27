@@ -1,13 +1,13 @@
+@file:Suppress("unused")
+
 package by.shostko.acollector
 
 import android.app.Activity
 import java.util.*
 
-internal class CompositeCollector : Collector {
-
-    private val collectors: MutableList<Collector> = LinkedList()
-
-    fun register(collector: Collector) = collectors.add(collector)
+open class CompositeCollector(
+    private val collectors: List<Collector> = emptyList()
+) : Collector {
 
     override fun reset() {
         collectors.forEach { it.reset() }
@@ -19,6 +19,10 @@ internal class CompositeCollector : Collector {
 
     override fun track(event: String, data: Map<String, Any?>?) {
         collectors.forEach { it.track(event, data) }
+    }
+
+    internal fun track(holder: EventHolder) {
+        collectors.forEach { it.track(holder) }
     }
 
     override fun setScreen(activity: Activity, name: String?, clazz: Class<*>?) {
@@ -51,5 +55,11 @@ internal class CompositeCollector : Collector {
 
     override fun setProperty(key: String, value: Long?) {
         collectors.forEach { it.setProperty(key, value) }
+    }
+
+    internal class Internal(
+        private val collectors: MutableList<Collector> = LinkedList()
+    ) : CompositeCollector(collectors) {
+        fun register(collector: Collector) = collectors.add(collector)
     }
 }

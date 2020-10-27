@@ -14,7 +14,7 @@ object ACollector : Collector {
     private const val CLASS = "class"
     private const val THROWABLE = "throwable"
 
-    private val composition: CompositeCollector = CompositeCollector()
+    private val composition: CompositeCollector.Internal = CompositeCollector.Internal()
     private val mappers: LinkedList<Mapper<*>> = LinkedList()
     private val interceptors: LinkedList<Interceptor> = LinkedList()
 
@@ -29,6 +29,10 @@ object ACollector : Collector {
 
     fun intercept(interceptor: Interceptor) {
         interceptors.addLast(interceptor)
+    }
+
+    fun intercept(vararg interceptors: Interceptor) {
+        this.interceptors.addAll(interceptors)
     }
 
     fun <T : Any> map(clazz: Class<T>, mapper: MutableMap<String, Any?>.(T) -> Unit) {
@@ -61,26 +65,16 @@ object ACollector : Collector {
     fun setProperty(property: Collector.Property, value: Int?) = composition.setProperty(property.name, value)
     fun setProperty(property: Collector.Property, value: Long?) = composition.setProperty(property.name, value)
 
-    private fun track(holder: EventHolder) {
-        if (interceptors.isEmpty()) {
-            composition.track(holder.event.name, holder.data?.asMap())
+    private fun track(holder: EventHolder) = interceptors.handle(composition, holder)
+
+    internal fun dataAsMap(array: Array<out Any?>?): Map<String, Any?>? =
+        if (array.isNullOrEmpty()) {
+            null
         } else {
-            var temp: EventHolder? = holder
-            for (interceptor in interceptors) {
-                temp = temp?.let { interceptor.intercept(it) }
-                if (temp == null) {
-                    break
-                }
-            }
-            if (temp != null) {
-                composition.track(temp.event.name, temp.data?.asMap())
+            HashMap<String, Any?>().also {
+                array.forEach { obj -> it.bundle(obj) }
             }
         }
-    }
-
-    private fun Array<out Any?>.asMap(): Map<String, Any?> = HashMap<String, Any?>().also {
-        forEach { obj -> it.bundle(obj) }
-    }
 
     private fun MutableMap<String, Any?>.bundle(obj: Any?) {
         if (obj == null) {
