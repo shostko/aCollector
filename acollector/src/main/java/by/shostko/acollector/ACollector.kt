@@ -148,8 +148,8 @@ object ACollector : Collector {
         fun canMap(obj: Any): Boolean = clazz.isInstance(obj)
 
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(bundle: MutableMap<String, Any?>, obj: Any) {
-            bundle.function(obj as T)
+        override fun invoke(map: MutableMap<String, Any?>, obj: Any) {
+            map.function(obj as T)
         }
     }
 }
