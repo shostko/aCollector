@@ -31,11 +31,12 @@ interface Collector {
     interface Event {
         val name: String
 
-        fun track(vararg objs: Any?) = ACollector.track(this, *objs)
+        fun track(vararg data: Any?) = ACollector.track(this, *data)
+        fun track(data: Map<String, Any?>?) = ACollector.track(this, data)
 
         companion object {
-            private class Simple(override val name: String) : Event
             fun create(name: String): Event = Simple(name)
+            private class Simple(override val name: String) : Event
         }
     }
 }
@@ -56,6 +57,7 @@ data class EventHolder(
     fun replaceEvent(event: Collector.Event) = copy(event = event)
 
     fun replaceData(vararg data: Any?) = copy(data = data)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
