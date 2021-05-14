@@ -1,6 +1,6 @@
 # aCollector
 
-[ ![Download](https://api.bintray.com/packages/shostko/android/aCollector/images/download.svg) ](https://bintray.com/shostko/android/aCollector/_latestVersion)
+[![Maven Central](https://img.shields.io/maven-central/v/by.shostko/aCollector?style=flat)](#integration) [![API-level](https://img.shields.io/badge/API-14+-blue?style=flat&logo=android)](https://source.android.com/setup/start/build-numbers) [![License](https://img.shields.io/badge/license-Apach%202.0-green?style=flat)](#license) 
 
 Analytics Collector library for android
 
@@ -44,15 +44,8 @@ For more advanced ways to use the library please refer to the sample (TODO)
 
 ## Integration
 
-As soon as it is still in development you should add to your project Gradle configuration:
+The library is now available in Maven Central repository:
 
-```gradle
-repositories {
-    maven { url "https://dl.bintray.com/shostko/android" }
-}
-```
-
-Base module integration:
 ```gradle
 dependencies {
     implementation 'by.shostko:aCollector:0.+'
